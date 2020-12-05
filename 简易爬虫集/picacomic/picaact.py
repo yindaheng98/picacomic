@@ -1,4 +1,5 @@
 import os
+import re
 import logging
 import sqlite3
 import json
@@ -120,6 +121,8 @@ class PicaAction:
 
     def __insert_favourite(self, favourite):
         detail = self.picaapi.comics(favourite["_id"])
+        if detail == None:
+            return
         _ = self.__ExecuteSQL("insert or REPLACE into comics (id, data, detail)values(?, ?, ?);",
                               (favourite["_id"], json.dumps(favourite), json.dumps(detail)))
         _ = self.__ExecuteSQL("insert or REPLACE into favourites (id, user)values(?, ?);",
@@ -217,6 +220,9 @@ class PicaAction:
             url = parse.urljoin(media["fileServer"],
                                 "static/"+media["path"])
             path = None
+            comic['author'] = re.sub('[\/:*?"<>|]', '', comic['author'])
+            comic['title'] = re.sub('[\/:*?"<>|]', '', comic['title'])
+            eps['title'] = re.sub('[\/:*?"<>|]', '', eps['title'])
             if comic['finished'] and comic['epsCount'] <= 1:
                 path = os.path.join(self.download_path,
                                     comic['author'], comic['title'],
@@ -241,4 +247,3 @@ class PicaAction:
             n -= 1
             logging.info("系统内未完成分话还有%d个" % n)
         logging.info("系统内所有分话下载完成")
-

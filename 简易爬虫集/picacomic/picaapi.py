@@ -130,25 +130,37 @@ class PicaApi:
         logging.info("获取漫画%s的详细信息......" % id)
         api = "comics/%s" % id
         response = self.__get_api(api).json()
-        comics = response["data"]['comic']
-        logging.info("漫画%s的详细信息已获取" % id)
-        return comics
+        try:
+            comics = response["data"]['comic']
+            logging.info("漫画%s的详细信息已获取" % id)
+            return comics
+        except:
+            logging.info("漫画%s的详细信息不存在" % id)
+            return None
 
     def eps(self, id, page):
         logging.info("获取漫画%s分话列表的第%d页......" % (id, page))
         api = 'comics/%s/eps?page=%d' % (id, page)
         response = self.__get_api(api).json()
-        eps = response["data"]['eps']
-        logging.info("漫画%s分话列表的第%d页已获取" % (id, page))
-        return eps
+        try:
+            eps = response["data"]['eps']
+            logging.info("漫画%s分话列表的第%d页已获取" % (id, page))
+            return eps
+        except:
+            logging.info("漫画%s的分话列表不存在" % id)
+            return None
 
     def pages(self, id, eps, page):
         logging.info("获取漫画%s第%s分话的第%d页图片信息......" % (id, eps, page))
         api = 'comics/%s/order/%s/pages?page=%d' % (id, eps, page)
         response = self.__get_api(api).json()
-        pages = response["data"]['pages']
-        logging.info("漫画%s第%s分话的第%d页图片信息已获取" % (id, eps, page))
-        return pages
+        try:
+            pages = response["data"]['pages']
+            logging.info("漫画%s第%s分话的第%d页图片信息已获取" % (id, eps, page))
+            return pages
+        except:
+            logging.info("漫画%s的图片信息不存在" % id)
+            return None
 
     def download(self, url, write_to_path):
         if not os.path.exists(os.path.dirname(write_to_path)):
@@ -163,40 +175,3 @@ class PicaApi:
             _pic = self.__get(url=url, header=header).content
             out.write(_pic)
         logging.info("图片 %s 已下载" % write_to_path)
-
-
-if __name__ == "__main__":
-    from pprint import pprint
-
-    def tprint(obj):
-        print('\n\ntest-------------->')
-        pprint(obj)
-
-    picaapi = PicaApi(proxies={
-        'http': 'http://localhost:10801',
-        'https': 'http://localhost:10801'})
-    picaapi.login("yyinn98", "YHM19980228yhm")
-    tprint(picaapi.profile())
-    favorites = picaapi.favourite(1,"dd")
-    tprint(favorites)
-    favorites = picaapi.favourite(1,"da")
-    tprint(favorites)
-    comic = favorites['docs'][0]
-    tprint(comic)
-    id = comic['_id']
-    tprint(id)
-    comics = picaapi.comics(id)
-    tprint(comics)
-    eps = picaapi.eps(id, 1)
-    tprint(eps)
-    eps = eps['docs'][0]["order"]
-    tprint(eps)
-    pages = picaapi.pages(id, eps, 1)
-    tprint(pages)
-    page = pages["docs"][0]
-    tprint(page)
-    media = page["media"]
-    tprint(media)
-    url = media["fileServer"]+"/static/"+media["path"]
-    write_to_path = media["originalName"]
-    picaapi.download(url, write_to_path)

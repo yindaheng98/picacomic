@@ -9,6 +9,8 @@ if __name__ == "__main__":
                       type='string', help='pica密码')
     parser.add_option('-x', '--exec', dest='exec', default='download',
                       type='string', help='执行指令: init 初始化数据库, update 更新数据库, download 下载图片')
+    parser.add_option('-n', '--numb', dest='numb', default=0,
+                      type='int', help='执行指令=init是初始化前多少个')
     parser.add_option('-y', '--proxy', dest='proxy',
                       type='string', help='代理设置')
     options, _ = parser.parse_args()
@@ -21,7 +23,10 @@ if __name__ == "__main__":
                    })
 
     if options.exec == "init":
-        p.init_favourites()
+        if options.numb>0:
+            p.init_favourites(options.numb)
+        else:
+            p.init_favourites()
         p.init_episodes()
         p.append_download_status()
 
