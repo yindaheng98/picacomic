@@ -220,9 +220,14 @@ class PicaAction:
             url = parse.urljoin(media["fileServer"],
                                 "static/"+media["path"])
             path = None
-            comic['author'] = re.sub('[\/:*?"<>|]', '', comic['author'])
-            comic['title'] = re.sub('[\/:*?"<>|]', '', comic['title'])
-            eps['title'] = re.sub('[\/:*?"<>|]', '', eps['title'])
+
+            def cor_dirname(dn):
+                dn = re.sub('[\/:*?"<>|]', '', dn)
+                dn = dn.strip()
+                return dn
+            comic['author'] = cor_dirname(comic['author'])
+            comic['title'] = cor_dirname(comic['title'])
+            eps['title'] = cor_dirname(eps['title'])
             if comic['finished'] and comic['epsCount'] <= 1:
                 path = os.path.join(self.download_path,
                                     comic['author'], comic['title'],
