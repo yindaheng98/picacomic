@@ -193,7 +193,7 @@ class PicaAction:
         logging.info("系统内所有漫画的分话列表初始化完成")
 
     def append_download_status(self):
-        logging.info("为系统内新增的分话添加下载状态记录")
+        logging.info("为系统内新增的分话添加下载状态记录......")
         _ = self.__ExecuteSQL(
             "create table if not exists status (id text PRIMARY KEY NOT NULL, finished bool," +
             "FOREIGN KEY(id) REFERENCES episodes(id));")
@@ -202,6 +202,12 @@ class PicaAction:
             "(select * from episodes left outer join status on status.id=episodes.id)" +
             "where finished IS NULL;")
         logging.info("已为系统内新增的分话添加下载状态记录")
+
+    def reset_download_status(self):
+        logging.info("重置系统内的分话下载状态记录......")
+        _ = self.__ExecuteSQL(
+            "insert or REPLACE into status(id, finished) select id,FALSE from episodes;")
+        logging.info("系统内的分话下载状态记录已重置")
 
     def __travel_img(self, comic, order):
         data = self.picaapi.pages(comic, order, 1)
