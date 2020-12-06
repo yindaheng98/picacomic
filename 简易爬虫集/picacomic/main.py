@@ -10,7 +10,9 @@ if __name__ == "__main__":
     parser.add_option('-x', '--exec', dest='exec', default='download',
                       type='string', help='执行指令: init 初始化数据库, update 更新数据库, download 下载图片')
     parser.add_option('-n', '--numb', dest='numb', default=0,
-                      type='int', help='执行指令=init是初始化前多少个')
+                      type='int', help='执行指令=init时初始化前多少个')
+    parser.add_option('-t', '--thread', dest='thread', default=5,
+                      type='int', help='执行指令=download时使用多少线程')
     parser.add_option('-y', '--proxy', dest='proxy',
                       type='string', help='代理设置')
     options, _ = parser.parse_args()
@@ -20,7 +22,7 @@ if __name__ == "__main__":
                    {
                        'http': options.proxy,
                        'https': options.proxy
-                   })
+                   }, threadn=options.thread)
 
     if options.exec == "init":
         if options.numb>0:

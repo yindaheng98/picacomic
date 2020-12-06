@@ -3,13 +3,14 @@ import re
 import logging
 import sqlite3
 import json
+import threading
 from picaapi import PicaApi
 from urllib import parse
 
 
 class PicaAction:
     def __init__(self, account, password,
-                 proxies=None, data_path=os.path.join(os.path.split(__file__)[0], "data"),
+                 proxies=None, data_path=os.path.join(os.path.split(__file__)[0], "data"), threadn=5,
                  global_url="https://picaapi.picacomic.com/",
                  api_key="C69BAF41DA5ABD1FFEDC6D2FEA56B",
                  secret_key="~d}$Q7$eIni=V)9\\RK/P.RM4;9[7|@/CA}b~OW!3?EV`:<>M7pddUBL5n|0/*Cn"):
@@ -24,6 +25,8 @@ class PicaAction:
         self.db = sqlite3.connect(os.path.join(data_path, "data.db"))
         self.__login(account, password)
         self.account = account
+        self.threadn = threadn
+        self.threads = []
 
     def __ExecuteSQL(self, sql, args=None):
         cur = self.db.cursor()
@@ -212,6 +215,15 @@ class PicaAction:
             for img in docs:
                 yield img
 
+    def __download_thread(self, url, path):
+        t = threading.Thread(target=self.picaapi.download, args=(url, path))
+        self.threads.append(t)
+        t.start()
+        if len(self.threads)>=self.threadn:
+            for t in self.threads:
+                t.join()
+            self.threads = []
+    
     def __download(self, comic, eps):
         order = eps["order"]
         logging.info("开始下载漫画%s的分话%s" % (comic["_id"], eps["_id"]))
@@ -236,7 +248,9 @@ class PicaAction:
                 path = os.path.join(self.download_path,
                                     comic['author'], comic['title'],
                                     eps['title'], media['originalName'])
-            self.picaapi.download(url, path)
+            self.__download_thread(url, path)
+        for t in self.threads:
+            t.join()
         _ = self.__ExecuteSQL("update status set finished=true where id=?;",
                               (eps["_id"],))
         logging.info("漫画%s的分话%s下载完成" % (comic["_id"], eps["_id"]))
