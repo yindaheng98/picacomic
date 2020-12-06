@@ -163,8 +163,11 @@ class PicaApi:
             return None
 
     def download(self, url, write_to_path):
-        if not os.path.exists(os.path.dirname(write_to_path)):
-            os.makedirs(os.path.dirname(write_to_path))
+        try:
+            if not os.path.exists(os.path.dirname(write_to_path)):
+                os.makedirs(os.path.dirname(write_to_path))
+        except:
+            logging.info("线程上的小错误，莫慌")
         if os.path.exists(write_to_path) and os.path.getsize(write_to_path) != 0:
             logging.info("图片 %s 已存在" % write_to_path)
             return
