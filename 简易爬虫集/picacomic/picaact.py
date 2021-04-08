@@ -166,6 +166,8 @@ class PicaAction:
 
     def __travel_episodes_ol(self, id):
         data = self.picaapi.eps(id, 1)
+        if data is None:
+            return
         pages, epss = data["pages"], data["docs"]
         for eps in epss:
             yield eps
