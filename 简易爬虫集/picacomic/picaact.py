@@ -6,7 +6,7 @@ import json
 import threading
 from picaapi import PicaApi
 from urllib import parse
-
+from multiprocessing.pool import ThreadPool
 
 class PicaAction:
     def __init__(self, account, password,
@@ -26,7 +26,6 @@ class PicaAction:
         self.__login(account, password)
         self.account = account
         self.threadn = threadn
-        self.threads = []
 
     def __ExecuteSQL(self, sql, args=None):
         cur = self.db.cursor()
@@ -81,15 +80,10 @@ class PicaAction:
                 if limit <= 0:
                     return True
             return False
-        data = self.picaapi.favourite(1, order=order)
-        pages, docs = data['pages'], data["docs"]
-        for favourite in docs:
-            yield favourite
-            if islimited():
-                return
+        pages = self.picaapi.favourite(1, order=order)['pages']
         if pages < 2:
             return
-        for i in range(2, pages+1):
+        for i in range(1, pages+1):
             docs = self.picaapi.favourite(i, order=order)['docs']
             for favourite in docs:
                 yield favourite
@@ -194,6 +188,13 @@ class PicaAction:
             self.init_episode(favourite["_id"])
         logging.info("系统内所有漫画的分话列表初始化完成")
 
+    def update_episodes(self):
+        logging.info("更新系统内所有未完成漫画的分话列表......")
+        for favourite, _ in self.__travel_favourites_db():
+            if not favourite["finished"]:
+                self.init_episode(favourite["_id"])
+        logging.info("系统内所有未完成漫画的分话列表初始化完成")
+
     def append_download_status(self):
         logging.info("为系统内新增的分话添加下载状态记录......")
         _ = self.__ExecuteSQL(
@@ -222,19 +223,11 @@ class PicaAction:
             docs = self.picaapi.pages(comic, order, i)['docs']
             for img in docs:
                 yield img
-
-    def __download_thread(self, url, path):
-        t = threading.Thread(target=self.picaapi.download, args=(url, path))
-        self.threads.append(t)
-        t.start()
-        if len(self.threads)>=self.threadn:
-            for t in self.threads:
-                t.join()
-            self.threads = []
     
     def __download(self, comic, eps):
         order = eps["order"]
         logging.info("开始下载漫画%s的分话%s" % (comic["_id"], eps["_id"]))
+        threadpool = ThreadPool(processes=self.threadn)
         for data in self.__travel_img(comic["_id"], order):
             media = data["media"]
             url = parse.urljoin(media["fileServer"],
@@ -245,20 +238,22 @@ class PicaAction:
                 dn = re.sub('[\/:*?"<>|]', '', dn)
                 dn = dn.strip()
                 return dn
-            comic['author'] = cor_dirname(comic['author'])
-            comic['title'] = cor_dirname(comic['title'])
-            eps['title'] = cor_dirname(eps['title'])
+            author = 'null'
+            if 'author' in comic:
+                author = cor_dirname(comic['author'])
+            ctitle = cor_dirname(comic['title'])
+            etitle = cor_dirname(eps['title'])
             if comic['finished'] and comic['epsCount'] <= 1:
                 path = os.path.join(self.download_path,
-                                    comic['author'], comic['title'],
+                                    author, ctitle,
                                     media['originalName'])
             else:
                 path = os.path.join(self.download_path,
-                                    comic['author'], comic['title'],
-                                    eps['title'], media['originalName'])
-            self.__download_thread(url, path)
-        for t in self.threads:
-            t.join()
+                                    author, ctitle, etitle,
+                                    media['originalName'])
+            threadpool.apply_async(self.picaapi.download, (url, path,))
+        threadpool.close()
+        threadpool.join()
         _ = self.__ExecuteSQL("update status set finished=true where id=?;",
                               (eps["_id"],))
         logging.info("漫画%s的分话%s下载完成" % (comic["_id"], eps["_id"]))

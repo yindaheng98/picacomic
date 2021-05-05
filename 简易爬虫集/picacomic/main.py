@@ -34,6 +34,7 @@ if __name__ == "__main__":
 
     if options.exec == "update":
         p.append_favourites()
+        p.update_episodes()
         p.update_finish_status()
         p.append_download_status()
 
