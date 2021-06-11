@@ -8,6 +8,7 @@ from picaapi import PicaApi
 from urllib import parse
 from multiprocessing.pool import ThreadPool
 
+
 class PicaAction:
     def __init__(self, account, password,
                  proxies=None, data_path=os.path.join(os.path.split(__file__)[0], "data"), threadn=5,
@@ -145,9 +146,13 @@ class PicaAction:
             if len(fs) > 0:
                 logging.info("%s 的收藏 %s 已入数据库......" %
                              (self.account, favourite["_id"]))
-                break
-            logging.info("%s 的收藏 %s 未入数据库......" %
-                         (self.account, favourite["_id"]))
+                if n == None:
+                    break
+                else:
+                    logging.info("设置了更新收藏的数量为 %d，继续......" % n)
+            else:
+                logging.info("%s 的收藏 %s 未入数据库......" %
+                             (self.account, favourite["_id"]))
             self.__insert_favourite(favourite)
         logging.info("%s 的收藏列表中的新增收藏已写入数据库" % self.account)
 
@@ -223,7 +228,7 @@ class PicaAction:
             docs = self.picaapi.pages(comic, order, i)['docs']
             for img in docs:
                 yield img
-    
+
     def __download(self, comic, eps):
         order = eps["order"]
         logging.info("开始下载漫画%s的分话%s" % (comic["_id"], eps["_id"]))
