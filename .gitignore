@@ -1,3 +1,4 @@
+run.cmd
 *.log
 *.db
 data
