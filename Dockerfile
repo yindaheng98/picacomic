@@ -1,7 +1,7 @@
 FROM python:3-alpine AS base
 FROM base AS builder
 WORKDIR /install
-RUN pip install --prefix /install --no-cache-dir sqlite3 requests urllib3
+RUN pip install --prefix /install --no-cache-dir requests urllib3
 
 FROM base
 COPY ./*.py /
