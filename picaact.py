@@ -11,7 +11,9 @@ from multiprocessing.pool import ThreadPool
 
 class PicaAction:
     def __init__(self, account, password,
-                 proxies=None, data_path=os.path.join(os.path.split(__file__)[0], "data"), threadn=5,
+                 proxies=None, threadn=5,
+                 data_path=os.path.join(os.path.split(__file__)[0], "data"),
+                 db_path=os.path.join(os.path.split(__file__)[0], "data", "data.db"),
                  global_url="https://picaapi.picacomic.com/",
                  api_key="C69BAF41DA5ABD1FFEDC6D2FEA56B",
                  secret_key="~d}$Q7$eIni=V)9\\RK/P.RM4;9[7|@/CA}b~OW!3?EV`:<>M7pddUBL5n|0/*Cn"):
@@ -23,7 +25,7 @@ class PicaAction:
         self.download_path = data_path
         if not os.path.exists(data_path):
             os.makedirs(data_path)
-        self.db = sqlite3.connect(os.path.join(data_path, "data.db"))
+        self.db = sqlite3.connect(db_path)
         self.__login(account, password)
         self.account = account
         self.threadn = threadn
